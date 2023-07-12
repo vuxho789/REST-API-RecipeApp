@@ -7,6 +7,11 @@ from decimal import Decimal
 from core import models
 
 
+def create_user(**params):
+    """Create and return a new user."""
+    return get_user_model().objects.create_user(**params)
+
+
 class ModelTests(TestCase):
     """Test models."""
 
@@ -14,9 +19,8 @@ class ModelTests(TestCase):
         """Test creating a user with an email is successful"""
         email = 'test@example.com'
         password = 'testpass123'
-        user = get_user_model().objects.create_user(
-            email=email,
-            password=password,)
+        user = create_user(email=email,
+                           password=password)
 
         self.assertEqual(user.email, email)
         self.assertTrue(user.check_password(password))
@@ -32,13 +36,15 @@ class ModelTests(TestCase):
         ]
 
         for email, expected_email in sample_emails:
-            user = get_user_model().objects.create_user(email, 'testpass123')
+            user = create_user(email=email,
+                               password='testpass123')
             self.assertEqual(user.email, expected_email)
 
     def test_new_user_without_email_raises_error(self):
         """Test that creating a user without an email raises a ValueError."""
         with self.assertRaises(ValueError):
-            get_user_model().objects.create_user('', 'testpass123')
+            create_user(email='',
+                        password='testpass123')
 
     def test_create_superuser(self):
         """Test creating a superuser."""
@@ -52,10 +58,8 @@ class ModelTests(TestCase):
 
     def test_create_recipe(self):
         """Test creating a recipe is successful."""
-        user = get_user_model().objects.create_user(
-            email='user@example.com',
-            password='testpass123',
-        )
+        user = create_user(email='user@example.com',
+                           password='testpass123')
         recipe = models.Recipe.objects.create(
             created_by=user,
             title='Sample Recipe Name',
@@ -65,3 +69,12 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(recipe), recipe.title)
+
+    def test_create_tag(self):
+        """Test creating a tag is successful."""
+        user = create_user(email='user@example.com',
+                           password='testpass123')
+        tag = models.Tag.objects.create(created_by=user,
+                                        name='Tag Example')
+
+        self.assertEqual(str(tag), tag.name)

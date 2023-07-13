@@ -49,7 +49,7 @@ class PrivateTagApiTests(TestCase):
                                 password='testpass123',)
         self.client.force_authenticate(self.user)
 
-    def test_retrieve_recipes(self):
+    def test_retrieve_tags(self):
         """Test retrieving a list of tags."""
         Tag.objects.create(created_by=self.user, name='Vegan')
         Tag.objects.create(created_by=self.user, name='Dessert')

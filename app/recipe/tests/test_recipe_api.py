@@ -382,6 +382,60 @@ class PrivateRecipeAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(recipe.ingredients.count(), 0)
 
+    def test_filter_by_tags(self):
+        """Test filtering recipes by tags."""
+        recipe_1 = create_recipe(user=self.user,
+                                 title='Thai Prawn Curry')
+        recipe_2 = create_recipe(user=self.user,
+                                 title='Vietnamese Spring Rolls')
+        tag_1 = Tag.objects.create(created_by=self.user,
+                                   name='Spicy')
+        tag_2 = Tag.objects.create(created_by=self.user,
+                                   name='Fresh')
+        recipe_1.tags.add(tag_1)
+        recipe_2.tags.add(tag_2)
+
+        recipe_3 = create_recipe(user=self.user,
+                                 title='Fish and Chips')
+
+        params = {'tags': f'{tag_1.id}, {tag_2.id}'}
+        res = self.client.get(RECIPES_URL, params)
+
+        serialised_data_1 = RecipeSerializer(recipe_1)
+        serialised_data_2 = RecipeSerializer(recipe_2)
+        serialised_data_3 = RecipeSerializer(recipe_3)
+
+        self.assertIn(serialised_data_1.data, res.data)
+        self.assertIn(serialised_data_2.data, res.data)
+        self.assertNotIn(serialised_data_3.data, res.data)
+
+    def test_filter_by_ingredients(self):
+        """Test filtering recipes by ingredients."""
+        recipe_1 = create_recipe(user=self.user,
+                                 title='Korean Fried Chicken')
+        recipe_2 = create_recipe(user=self.user,
+                                 title='Spicy Beef Noodle Soup')
+        ingredient_1 = Ingredient.objects.create(created_by=self.user,
+                                                 name='Gochujang')
+        ingredient_2 = Ingredient.objects.create(created_by=self.user,
+                                                 name='Lemongrass')
+        recipe_1.ingredients.add(ingredient_1)
+        recipe_2.ingredients.add(ingredient_2)
+
+        recipe_3 = create_recipe(user=self.user,
+                                 title='Red Lentil Daal')
+
+        params = {'ingredients': f'{ingredient_1.id}, {ingredient_2.id}'}
+        res = self.client.get(RECIPES_URL, params)
+
+        serialised_data_1 = RecipeSerializer(recipe_1)
+        serialised_data_2 = RecipeSerializer(recipe_2)
+        serialised_data_3 = RecipeSerializer(recipe_3)
+
+        self.assertIn(serialised_data_1.data, res.data)
+        self.assertIn(serialised_data_2.data, res.data)
+        self.assertNotIn(serialised_data_3.data, res.data)
+
 
 class ImageUploadTests(TestCase):
     """Tests for image upload API."""

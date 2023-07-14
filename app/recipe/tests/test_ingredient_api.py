@@ -8,8 +8,9 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Ingredient
+from core.models import Ingredient, Recipe
 from recipe.serializers import IngredientSerializer
+from decimal import Decimal
 
 
 # The param for the reverse() function is constructed as follows:
@@ -102,3 +103,52 @@ class PrivateTagApiTests(TestCase):
 
         ingredients = Ingredient.objects.filter(created_by=self.user)
         self.assertFalse(ingredients.exists())
+
+    def test_filter_ingredients_assigned_to_recipes(self):
+        """Test listing ingedients by those assigned to recipes."""
+        ingredient_1 = Ingredient.objects.create(created_by=self.user,
+                                                 name='Apples')
+        ingredient_2 = Ingredient.objects.create(created_by=self.user,
+                                                 name='Turkey')
+        recipe = Recipe.objects.create(
+            title='Apple Crumble',
+            time_minutes=5,
+            price=Decimal('4.50'),
+            created_by=self.user,
+        )
+        recipe.ingredients.add(ingredient_1)
+
+        res = self.client.get(INGREDIENTS_URL, {'assigned_only': 1})
+
+        serialized_data_1 = IngredientSerializer(ingredient_1)
+        serialized_data_2 = IngredientSerializer(ingredient_2)
+        self.assertIn(serialized_data_1.data, res.data)
+        self.assertNotIn(serialized_data_2.data, res.data)
+
+    def test_filtered_ingredients_unique(self):
+        """
+        Test filtering assigned ingredients returns a unique list.
+        """
+        ingredient = Ingredient.objects.create(created_by=self.user,
+                                               name='Eggs')
+        Ingredient.objects.create(created_by=self.user,
+                                  name='Lentils')
+        recipe_1 = Recipe.objects.create(
+            title='Eggs Benedict',
+            time_minutes=60,
+            price=Decimal('7.00'),
+            created_by=self.user,
+        )
+        recipe_2 = Recipe.objects.create(
+            title='Herb Eggs',
+            time_minutes=20,
+            price=Decimal('4.00'),
+            created_by=self.user,
+        )
+
+        recipe_1.ingredients.add(ingredient)
+        recipe_2.ingredients.add(ingredient)
+
+        res = self.client.get(INGREDIENTS_URL, {'assigned_only': 1})
+
+        self.assertEqual(len(res.data), 1)
